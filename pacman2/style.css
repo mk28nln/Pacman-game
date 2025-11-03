@@ -1,0 +1,45 @@
+:root{
+  --bg: #000;
+  --wall: #0aa;
+  --pellet: #fff;
+  --pac: #ffd700;
+  --ghost: #ff4d4d;
+  --ui-bg: rgba(0,0,0,0.6);
+  --font: "Courier New", monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  background:var(--bg);
+  color:#fff;
+  font-family:var(--font);
+  padding:18px;
+}
+
+#ui{
+  width: 880px;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  color:#fff;
+}
+#score, #lives{
+  background:var(--ui-bg);
+  padding:8px 12px;
+  border-radius:6px;
+  font-weight:700;
+}
+
+canvas{
+  display:block;
+  background:var(--bg);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  image-rendering: pixelated;
+  width: 880px; /* scales canvas while keeping internal resolution */
+  height: 1020px;
+}

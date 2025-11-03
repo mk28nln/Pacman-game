@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Pac-Man</title>
+<style>
+  body { margin: 0; background: black; overflow: hidden; }
+  canvas { display: block; margin: 0 auto; background: black; }
+</style>
+</head>
+<body>
+<canvas id="game" width="560" height="620"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const tile = 20;
+const rows = 31, cols = 28;
+
+let score = 0;
+let lives = 3;
+
+// --- Maze layout (1 = wall, 0 = pellet, 2 = empty)
+const layout = [
+"1111111111111111111111111111",
+"1000000000110000000000000001",
+"1011111110110111111111101101",
+"1020000010000000000000100001",
+"1011111011111111111011111101",
+"1000001010000000001010000001",
+"1111101010111111111010111111",
+"1000000010000100001000000001",
+"1011111111110101111111111101",
+"1000000000000000000000000001",
+"1111111111111111111111111111"
+];
+
+// --- Entities
+const pacman = { x: 14, y: 7, dir: {x:0,y:0}, next: {x:0,y:0}, speed: 0.08 };
+const ghost = { x: 14, y: 5, color: "red", speed: 0.05 };
+
+document.addEventListener("keydown", e => {
+  if(e.key==="ArrowUp") pacman.next = {x:0, y:-1};
+  if(e.key==="ArrowDown") pacman.next = {x:0, y:1};
+  if(e.key==="ArrowLeft") pacman.next = {x:-1, y:0};
+  if(e.key==="ArrowRight") pacman.next = {x:1, y:0};
+});
+
+function isWall(x,y){
+  x=Math.floor(x); y=Math.floor(y);
+  return layout[y] && layout[y][x]==="1";
+}
+
+function replaceAt(str, idx, ch){ return str.substring(0,idx)+ch+str.substring(idx+1); }
+
+function reset(full=false){
+  pacman.x=14; pacman.y=7; pacman.dir={x:0,y:0}; pacman.next={x:0,y:0};
+  ghost.x=14; ghost.y=5;
+  if(full){ score=0; lives=3; }
+}
+
+function update(){
+  // handle direction change
+  if(!isWall(pacman.x+pacman.next.x, pacman.y+pacman.next.y))
+    pacman.dir=pacman.next;
+
+  // move Pac-Man
+  let nx=pacman.x+pacman.dir.x*pacman.speed*5;
+  let ny=pacman.y+pacman.dir.y*pacman.speed*5;
+  if(!isWall(nx,ny)){ pacman.x=nx; pacman.y=ny; }
+
+  // wrap-around tunnels
+  if(pacman.x<0) pacman.x=cols-1;
+  if(pacman.x>=cols) pacman.x=0;
+
+  // eat pellet
+  let px=Math.floor(pacman.x), py=Math.floor(pacman.y);
+  if(layout[py] && layout[py][px]==="0"){
+    layout[py]=replaceAt(layout[py],px,"2");
+    score+=10;
+  }
+
+  // move ghost randomly and slowly
+  if(Math.random()<0.05){
+    const dirs=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+    const d=dirs[Math.floor(Math.random()*4)];
+    const gx=ghost.x+d.x, gy=ghost.y+d.y;
+    if(!isWall(gx,gy)){ ghost.x=gx; ghost.y=gy; }
+  }
+
+  // collision check
+  if(Math.hypot(ghost.x-pacman.x,ghost.y-pacman.y)<0.6){
+    lives--;
+    if(lives<=0){ alert("Game Over! Score: "+score); reset(true); }
+    else reset();
+  }
+
+  // check win
+  if(layout.every(r=>!r.includes("0"))){ alert("You win!"); reset(true); }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // maze
+  for(let y=0;y<layout.length;y++){
+    for(let x=0;x<layout[y].length;x++){
+      const c=layout[y][x];
+      if(c==="1"){ ctx.fillStyle="blue"; ctx.fillRect(x*tile,y*tile,tile,tile); }
+      else if(c==="0"){
+        ctx.fillStyle="white";
+        ctx.beginPath();
+        ctx.arc(x*tile+tile/2,y*tile+tile/2,3,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+  // Pac-Man
+  ctx.fillStyle="yellow";
+  ctx.beginPath();
+  ctx.arc(pacman.x*tile+tile/2,pacman.y*tile+tile/2,8,0.25*Math.PI,1.75*Math.PI);
+  ctx.lineTo(pacman.x*tile+tile/2,pacman.y*tile+tile/2);
+  ctx.fill();
+
+  // Ghost
+  ctx.fillStyle=ghost.color;
+  ctx.beginPath();
+  ctx.arc(ghost.x*tile+tile/2,ghost.y*tile+tile/2,8,Math.PI,0);
+  ctx.lineTo(ghost.x*tile+tile/2+8,ghost.y*tile+tile/2+8);
+  ctx.lineTo(ghost.x*tile+tile/2-8,ghost.y*tile+tile/2+8);
+  ctx.closePath();
+  ctx.fill();
+
+  // UI
+  ctx.fillStyle="white";
+  ctx.font="18px monospace";
+  ctx.fillText("SCORE: "+score, 20, 20);
+  ctx.fillText("LIVES: "+lives, 460, 20);
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
